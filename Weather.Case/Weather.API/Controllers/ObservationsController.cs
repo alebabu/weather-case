@@ -32,7 +32,7 @@ namespace Weather.API.Controllers
         [ProducesResponseType(StatusCodes.Status502BadGateway)]
         public async Task<IActionResult> Get([FromQuery] string? stationId, [FromQuery] string? range = "hour")
         {
-            var result = await _service.GetObservation(stationId, range);
+            //var result = await _service.GetObservation(stationId, range);
 
             var resultTemp = new ObservationResponse();
 
