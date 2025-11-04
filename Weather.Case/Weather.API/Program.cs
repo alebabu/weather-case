@@ -2,13 +2,19 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using Weather.API.Application.Interfaces;
 using Weather.API.Application.Services;
+using Weather.API.Mappers;
 using Weather.API.Middlewares;
+using Weather.Integration.ClientInterfaces;
+using Weather.Integration.Clients;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddSingleton<IObservationService, ObservationService>();
+builder.Services.AddSingleton<ISmhiClient, SmhiClient>();
+builder.Services.AddSingleton<SmhiObservationMapper>();
+builder.Services.AddHttpClient();
 builder.Services.AddControllers();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

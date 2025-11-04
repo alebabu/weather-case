@@ -4,6 +4,6 @@ namespace Weather.API.Application.Interfaces
 {
     public interface IObservationService
     {
-        public Task<ObservationResponse> GetObservation(string stationId, string range);
+        public Task<ObservationResponse> GetObservationsAsync(string? stationId, CancellationToken token, string period = "last-hour");
     }
 }

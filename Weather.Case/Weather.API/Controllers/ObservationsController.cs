@@ -24,19 +24,24 @@ namespace Weather.API.Controllers
         /// Returns merged temperature and wind gust data.
         /// </summary>
         /// <param name="stationId">Optional station ID</param>
-        /// <param name="range">hour|day (default=hour)</param>
+        /// <param name="period">last-hour|last-day (default=LastHour)</param>
         [HttpGet]
         [ProducesResponseType(typeof(ObservationResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status502BadGateway)]
-        public async Task<IActionResult> Get([FromQuery] string? stationId, [FromQuery] string? range = "hour")
+        public async Task<IActionResult> Get([FromQuery] string? stationId, [FromQuery] string period = "last-hour")
         {
-            //var result = await _service.GetObservation(stationId, range);
-
-            var resultTemp = new ObservationResponse();
-
-            return Ok(resultTemp);
+            try
+            {
+                var result = await _service.GetObservationsAsync(stationId, HttpContext.RequestAborted, period);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching observations");
+                return StatusCode(502, new { message = "Failed to fetch data from SMHI." });
+            }
         }
 
     }

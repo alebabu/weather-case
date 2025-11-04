@@ -25,15 +25,17 @@ namespace Weather.Integration.Clients
             _logger = logger;
         }
 
-        public async Task<SmhiParameterResponse> GetAllStationsAsync(SmhiInputParameter parameter, CancellationToken token)
+        public async Task<IEnumerable<SmhiStation>> GetAllStationsAsync(SmhiInputParameter parameter, CancellationToken token)
         {
-            var path = $"{BASE_URL}/parameter/{parameter.ToString()}.json";
+            var path = $"{BASE_URL}/parameter/{(int) parameter}.json";
 
-            var result = await _client.GetFromJsonAsync<SmhiParameterResponse>(path, token);
+            var response = await _client.GetFromJsonAsync<SmhiParameterResponse>(path, token);
 
-            if (result != null)
+            if (response != null)
             {
-                return result;
+                var stations = response.Station;
+
+                return stations;
             }
             else
             {
@@ -41,9 +43,9 @@ namespace Weather.Integration.Clients
             }
         }
 
-        public async Task<SmhiDataResponse> GetDataAsync(SmhiInputParameter parameter, int stationId, CancellationToken token, SmhiInputPeriod period = SmhiInputPeriod.LatestHour)
+        public async Task<SmhiDataResponse> GetDataAsync(SmhiInputParameter parameter, long stationId, CancellationToken token, SmhiInputPeriod period = SmhiInputPeriod.LatestHour)
         {
-            var path = $"{BASE_URL}/parameter/{parameter.ToString()}/station/{stationId}/period/{period.ToApiValue()}.json";
+            var path = $"{BASE_URL}/parameter/{(int) parameter}/station/{stationId}/period/{period.ToApiValue()}/data.json";
 
             var result = await _client.GetFromJsonAsync<SmhiDataResponse>(path, token);
 
