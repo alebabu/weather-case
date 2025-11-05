@@ -5,6 +5,7 @@ using Weather.API.Dto;
 using Weather.API.Mappers;
 using Weather.Integration.ClientInterfaces;
 using Weather.Integration.Models;
+using static System.Collections.Specialized.BitVector32;
 
 namespace Weather.API.Application.Services
 {
@@ -26,7 +27,7 @@ namespace Weather.API.Application.Services
 
         public async Task<ObservationResponse> GetObservationsAsync(string? stationId, CancellationToken token, string period = "last-hour")
         {
-            var stationIds = await GetAllStationIds(token);
+            var stationIds = await GetAllStationIds(token, ParsePeriod(period));
 
             if (!string.IsNullOrWhiteSpace(stationId) && long.TryParse(stationId, out var stationIdLong))
             {
@@ -35,6 +36,7 @@ namespace Weather.API.Application.Services
 
             var results = new ConcurrentBag<WeatherStationDto>();
             var sem = new SemaphoreSlim(6);
+            var failedStationList = new ConcurrentBag<(Exception Ex, long id)>();
 
             await Task.WhenAll(stationIds.Select(async station =>
             {
@@ -60,7 +62,7 @@ namespace Weather.API.Application.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to fetch data for station {StationId}", station.Id);
+                    failedStationList.Add((ex, station.Id));
                 }
                 finally
                 {
@@ -68,26 +70,41 @@ namespace Weather.API.Application.Services
                 }
             }));
 
-            return new ObservationResponse
+            if (failedStationList.Any())
             {
-                Period = period,
-                GeneratedAt = DateTime.Now,
-                StationCount = stationIds.Count,
-                Stations = results.OrderBy(x => x.StationId).ToList()
-            };
+                _logger.LogError("The request finished with Error.");
+                failedStationList.ToList().ForEach(x => _logger.LogError(x.Ex, "Failed to fetch data for station {StationId}", x.id));
+            }
+            else
+            {
+                _logger.LogInformation("The request finished successfully.");
+            }
+
+                return new ObservationResponse
+                {
+                    Period = period,
+                    GeneratedAt = DateTime.Now,
+                    StationCount = stationIds.Count,
+                    Stations = results.OrderBy(x => x.StationId).ToList()
+                };
         }
 
-        private async Task<List<(long Id, bool IsTempStation, bool IsGustStation)>> GetAllStationIds(CancellationToken token)
+        private async Task<List<(long Id, bool IsTempStation, bool IsGustStation)>> GetAllStationIds(CancellationToken token, SmhiInputPeriod period)
         {
             var stationIds = new List<(long Id, bool IsTempStation, bool IsGustStation)>();
 
             var tempStations = await _client.GetAllStationsAsync(SmhiInputParameter.AirTemperatureInstantHourly, token);
             var gustStations = await _client.GetAllStationsAsync(SmhiInputParameter.WindGustMaxHourly, token);
 
-            stationIds.AddRange(tempStations.Select(x => (x.Id, true, false)));
+            stationIds.AddRange(tempStations.Where(x => IsCurrentlyActive(x, period)).Select(x => (x.Id, true, false)));
 
             foreach (var item in gustStations)
             {
+                if (!IsCurrentlyActive(item, period))
+                {
+                    continue;
+                }
+
                 if (!stationIds.Select(x => x.Id).Contains(item.Id))
                 {
                     stationIds.Add((item.Id, false, true));
@@ -105,6 +122,27 @@ namespace Weather.API.Application.Services
 
             return stationIds;
         }
+
+        private static bool IsCurrentlyActive(SmhiStation station, SmhiInputPeriod period)
+        {
+            if (!station.Active)
+            {
+                return false;
+            }
+
+            var updatedUtc = DateTimeOffset.FromUnixTimeMilliseconds(station.Updated);
+
+            switch (period)
+            {
+                case SmhiInputPeriod.LatestHour:
+                    return updatedUtc >= DateTimeOffset.UtcNow.AddHours(-1);
+                case SmhiInputPeriod.LatestDay:
+                    return updatedUtc >= DateTimeOffset.UtcNow.AddDays(-1);
+                default:
+                    return false;
+            }
+        }
+
 
         private static SmhiInputPeriod ParsePeriod(string p) =>
             p.ToLowerInvariant() switch

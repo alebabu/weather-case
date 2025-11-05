@@ -12,9 +12,6 @@ namespace Weather.API.Dto
         [JsonPropertyName("stationName")]
         public string StationName { get; set; } = string.Empty;
 
-        [JsonPropertyName("Period")]
-        public string Period { get; set; } = string.Empty;
-
         [JsonPropertyName("airTemperature")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public WeatherParameter? AirTemperature { get; set; } = null;
