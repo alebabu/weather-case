@@ -37,6 +37,10 @@ namespace Weather.API.Controllers
                 var result = await _service.GetObservationsAsync(stationId, HttpContext.RequestAborted, period);
                 return Ok(result);
             }
+            catch(ArgumentException ex)
+            {
+                return BadRequest(new { StatusCode = 400, message = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching observations");

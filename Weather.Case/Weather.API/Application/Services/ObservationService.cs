@@ -127,7 +127,8 @@ namespace Weather.API.Application.Services
             p.ToLowerInvariant() switch
             {
                 "last-hour" or "hour" => SmhiInputPeriod.LatestHour,
-                _ => SmhiInputPeriod.LatestDay
+                "last-day" or "day" => SmhiInputPeriod.LatestDay,
+                _ => throw new ArgumentException("Could not parse input period parameter.")
             };
     }
 }
