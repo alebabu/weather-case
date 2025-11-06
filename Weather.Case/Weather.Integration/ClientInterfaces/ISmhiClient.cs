@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Weather.Integration.Models;
+﻿using Weather.Integration.Models;
 
 namespace Weather.Integration.ClientInterfaces
 {

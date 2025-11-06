@@ -1,11 +1,9 @@
 ﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
 using Weather.API.Application.Interfaces;
 using Weather.API.Dto;
 using Weather.API.Mappers;
 using Weather.Integration.ClientInterfaces;
 using Weather.Integration.Models;
-using static System.Collections.Specialized.BitVector32;
 
 namespace Weather.API.Application.Services
 {

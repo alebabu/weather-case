@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata;
-using Weather.API.Dto;
+﻿using Weather.API.Dto;
 using Weather.Integration.Models;
 
 namespace Weather.API.Mappers
