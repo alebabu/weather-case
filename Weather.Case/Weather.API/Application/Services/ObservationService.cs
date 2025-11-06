@@ -96,11 +96,11 @@ namespace Weather.API.Application.Services
             var tempStations = await _client.GetAllStationsAsync(SmhiInputParameter.AirTemperatureInstantHourly, token);
             var gustStations = await _client.GetAllStationsAsync(SmhiInputParameter.WindGustMaxHourly, token);
 
-            stationIds.AddRange(tempStations.Where(x => IsCurrentlyActive(x, period)).Select(x => (x.Id, true, false)));
+            stationIds.AddRange(tempStations.Where(x => x.Active).Select(x => (x.Id, true, false)));
 
             foreach (var item in gustStations)
             {
-                if (!IsCurrentlyActive(item, period))
+                if (!item.Active)
                 {
                     continue;
                 }
@@ -122,27 +122,6 @@ namespace Weather.API.Application.Services
 
             return stationIds;
         }
-
-        private static bool IsCurrentlyActive(SmhiStation station, SmhiInputPeriod period)
-        {
-            if (!station.Active)
-            {
-                return false;
-            }
-
-            var updatedUtc = DateTimeOffset.FromUnixTimeMilliseconds(station.Updated);
-
-            switch (period)
-            {
-                case SmhiInputPeriod.LatestHour:
-                    return updatedUtc >= DateTimeOffset.UtcNow.AddHours(-1);
-                case SmhiInputPeriod.LatestDay:
-                    return updatedUtc >= DateTimeOffset.UtcNow.AddDays(-1);
-                default:
-                    return false;
-            }
-        }
-
 
         private static SmhiInputPeriod ParsePeriod(string p) =>
             p.ToLowerInvariant() switch
